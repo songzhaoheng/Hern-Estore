@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx" xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop.xsd
+">
+
+    <context:component-scan base-package="com.estore" annotation-config="true"></context:component-scan>
+
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" destroy-method="close">
+        <property name="driverClassName" value="${db.driverClassName}"></property>
+        <property name="url" value="${db.url}"></property>
+        <property name="username" value="${db.username}"></property>
+        <property name="password" value="${db.password}"></property>
+        <!--初始化连接池个数-->
+        <property name="initialSize" value="${db.initialSize}"></property>
+        <!--最小连接池个数-->
+        <property name="minIdle" value="${db.minIdle}"></property>
+        <!--最大连接池个数-->
+        <property name="maxActive" value="${db.maxActive}"></property>
+        <!--获取连接等待超时的时间，单位毫秒，缺省启用公平锁，并发效率会有所下降-->
+        <property name="maxWait" value="${db.maxWait}"></property>
+        <!--没有使用事物来控制时自动提交-->
+        <property name="defaultAutoCommit" value="${db.defaultAutoCommit}"></property>
+        <!--开启连接池缓存-->
+        <property name="poolPreparedStatements" value="${db.poolPreparedStatements}"></property>
+        <!--每个连接池上的缓存大小-->
+        <property name="maxPoolPreparedStatementPerConnectionSize" value="${db.maxPoolPreparedStatementPerConnectionSize}"></property>
+        <!--间隔多久进行一次检测，检测需要关闭的空闲连接-->
+        <property name="timeBetweenEvictionRunsMillis" value="${db.timeBetweenEvictionRunsMillis}"></property>
+        <!--一个连接在池中的最小生存时间-->
+        <property name="minEvictableIdleTimeMillis" value="${db.minEvictableIdleTimeMillis}"></property>
+        <!--用来检测连接是否有效的sql，要求是一个查询语句。如果validationQuery为null，testOnBorrow、testOnReturn、testWhileIdle都不会起作用-->
+        <property name="validationQuery" value="${db.validationQuery}"></property>
+        <!--申请连接的时候检测，如果空闲时间大于timeBetweenEvictionRunsMillis，执行validationQuery检测连接是否有效。建议配置为true，不影响性能，并且保证安全性。-->
+        <property name="testWhileIdle" value="${db.testWhileIdle}"></property>
+        <!--申请连接时执行validationQuery检测连接是否有效，做了这个配置会降低性能-->
+        <property name="testOnBorrow" value="${db.testOnBorrow}"></property>
+        <!--归还连接时执行validationQuery检测连接是否有效，做了这个配置会降低性能-->
+        <property name="testOnReturn" value="${db.testOnReturn}"></property>
+        <!--合并多个DruidDataSource的监控数据-->
+        <property name="useGlobalDataSourceStat" value="${db.useGlobalDataSourceStat}"></property>
+        <!-- 添加此处作用是为了在SQL监控页面显示sql执行语句，不配置不显示监控统计用的filter:stat，多个用逗号分隔日志用的filter:log4j， 防御sql注入的filter:wall -->
+        <property name="filters" value="${db.filters}" />
+    </bean>
+
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"></property>
+        <property name="mapperLocations" value="classpath*:mappers/*Mapper.xml"></property>
+        <!-- 分页插件 -->
+        <property name="plugins">
+            <array>
+                <bean class="com.github.pagehelper.PageHelper">
+                    <property name="properties">
+                        <value>
+                            dialect=mysql
+                            reasonable=true
+                        </value>
+                    </property>
+                </bean>
+            </array>
+        </property>
+
+    </bean>
+
+    <bean name="mapperScannerConfigurer" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.estore.dao"></property>
+    </bean>
+
+    <!-- 使用@Transactional进行声明式事务管理需要声明下面这行 -->
+    <tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true" />
+
+    <!-- 事务管理 -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"></property>
+        <property name="rollbackOnCommitFailure" value="true"></property>
+    </bean>
+
+    <!--<tx:advice id="txAdvice" transaction-manager="transactionManager">
+        <tx:attributes>
+            <tx:method name="find*" read-only="true" propagation="REQUIRED"/>
+            <tx:method name="create*" rollback-for="Exception" propagation="REQUIRED" />
+            <tx:method name="save*" rollback-for="Exception" propagation="REQUIRED" />
+            <tx:method name="insert*" rollback-for="Exception" propagation="REQUIRED" />
+            <tx:method name="update*" rollback-for="Exception" propagation="REQUIRED" />
+            <tx:method name="delete*" rollback-for="Exception" propagation="REQUIRED" />
+        </tx:attributes>
+    </tx:advice>-->
+
+</beans>
